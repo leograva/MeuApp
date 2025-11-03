@@ -1,24 +1,43 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Slot, useRouter } from 'expo-router';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AuthProvider } from '../context/AuthContext';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+export default function TabsLayout() {
+  const router = useRouter();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <AuthProvider>
+    <View style={{ flex: 1 }}>
+      <Slot />
+
+      <View style={styles.bottomBar}>
+        <TouchableOpacity style={styles.tabButton} onPress={() => router.push(`/(tabs)/Index`)}>
+          <MaterialIcons name="person" size={16} color="#666" />
+          <Text>Lista de Postagens</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabButton} onPress={() => router.push(`/(tabs)/MenuAdministrativo`)}>
+          <MaterialIcons name="admin-panel-settings" size={16} color="#666" />
+          <Text>Menu Administrativo</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+    </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  bottomBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    height: 60,
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+    backgroundColor: '#fff',
+  },
+  tabButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+  },
+});

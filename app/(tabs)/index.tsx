@@ -1,98 +1,205 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function Index() {
+  const router = useRouter();
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState<string>('');
+  const [refreshing, setRefreshing] = useState(false);
+  const isMountedRef = useRef(true);
 
-export default function HomeScreen() {
+  const fetchPosts = async (q?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+      const url = q ? `http://${host}:3000/posts/search?q=${encodeURIComponent(q)}` : `http://${host}:3000/posts`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (isMountedRef.current) setPosts(json?.data?.posts || json?.posts || []);
+    } catch (err: any) {
+      if (isMountedRef.current) setError(err.message || 'Erro ao buscar posts');
+    } finally {
+      if (isMountedRef.current) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    fetchPosts();
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const handleSearch = async (q?: string) => {
+    const searchQ = typeof q === 'string' ? q : query;
+    try {
+      setLoading(true);
+      setError(null);
+      const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+      const url = searchQ ? `http://${host}:3000/posts/search?q=${encodeURIComponent(searchQ)}` : `http://${host}:3000/posts`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (isMountedRef.current) setPosts(json?.data?.posts || json?.posts || []);
+    } catch (err: any) {
+      if (isMountedRef.current) setError(err.message || 'Erro ao buscar posts');
+    } finally {
+      if (isMountedRef.current) setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchPosts(query);
+    setRefreshing(false);
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search-outline" size={20} color="#888" style={styles.searchIcon} />
+        <TextInput
+          placeholder="Buscar postagens"
+          placeholderTextColor="#aaa"
+          style={styles.searchInput}
+          value={query}
+          onChangeText={(t) => setQuery(t)}
+          onEndEditing={() => handleSearch()}
+          onSubmitEditing={() => handleSearch()}
+          returnKeyType="search"
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+      </View>
+      <Text style={styles.sectionTitle}>Postagens</Text>
+      <ScrollView
+        contentContainerStyle={styles.postsContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {loading && (
+          <View style={{ padding: 20 }}>
+            <ActivityIndicator size="small" color="#000" />
+          </View>
+        )}
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        {error && (
+          <View style={{ padding: 20 }}>
+            <Text style={{ color: 'red' }}>{error}</Text>
+          </View>
+        )}
+
+        {!loading && !error && posts.map((post) => (
+          <TouchableOpacity
+            key={post.id}
+            style={styles.postCard}
+            onPress={() => router.push(`/(tabs)/PostagemDetalhada?id=${post.id}`)}
+          >
+            <Text style={styles.postTitle}>{post.title}</Text>
+            <Text style={styles.postAuthor}>{post.author}</Text>
+            <Text style={styles.postContent}>{post.content.substring(0, 50)}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  container2: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffffff',
+    paddingVertical: 10,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    padding: 12,
+    backgroundColor: '#ffffff',
+    margin: 16,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  stepContainer: {
-    gap: 8,
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    margin: 16,
+    color: '#000000ff',
+  },
+  postsContainer: {
+    padding: 16,
+  },
+  postCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  postTitle: {
+    fontSize: 18,
+    fontWeight: '700',
     marginBottom: 8,
+    color: '#1a1a1a',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  postAuthor: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#666',
+  },
+  postContent: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    backgroundColor: '#000000ff',
+    borderRadius: 8,
+    margin: 8,
+  },
+  text: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
   },
 });
