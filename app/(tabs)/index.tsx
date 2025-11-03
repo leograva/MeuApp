@@ -1,7 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Index() {
@@ -18,7 +28,9 @@ export default function Index() {
     setError(null);
     try {
       const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-      const url = q ? `http://${host}:3000/posts/search?q=${encodeURIComponent(q)}` : `http://${host}:3000/posts`;
+      const url = q
+        ? `http://${host}:3000/posts/search?q=${encodeURIComponent(q)}`
+        : `http://${host}:3000/posts`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
@@ -38,23 +50,6 @@ export default function Index() {
     };
   }, []);
 
-  const handleSearch = async (q?: string) => {
-    const searchQ = typeof q === 'string' ? q : query;
-    try {
-      setLoading(true);
-      setError(null);
-      const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-      const url = searchQ ? `http://${host}:3000/posts/search?q=${encodeURIComponent(searchQ)}` : `http://${host}:3000/posts`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if (isMountedRef.current) setPosts(json?.data?.posts || json?.posts || []);
-    } catch (err: any) {
-      if (isMountedRef.current) setError(err.message || 'Erro ao buscar posts');
-    } finally {
-      if (isMountedRef.current) setLoading(false);
-    }
-  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -63,26 +58,30 @@ export default function Index() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safeContainer}>
+      {/* Campo de busca */}
       <View style={styles.searchContainer}>
         <Ionicons name="search-outline" size={20} color="#888" style={styles.searchIcon} />
         <TextInput
-          placeholder="Buscar postagens"
+          placeholder="Buscar postagens por palavra-chave"
           placeholderTextColor="#aaa"
           style={styles.searchInput}
           value={query}
           onChangeText={(t) => setQuery(t)}
-          onEndEditing={() => handleSearch()}
-          onSubmitEditing={() => handleSearch()}
+          onBlur={() => fetchPosts(query)}
+          onEndEditing={() => fetchPosts(query)}
+          onSubmitEditing={() => fetchPosts(query)}
           returnKeyType="search"
         />
       </View>
+
+      {/* Título */}
       <Text style={styles.sectionTitle}>Postagens</Text>
+
+      {/* Lista de posts */}
       <ScrollView
         contentContainerStyle={styles.postsContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {loading && (
           <View style={{ padding: 20 }}>
@@ -92,114 +91,114 @@ export default function Index() {
 
         {error && (
           <View style={{ padding: 20 }}>
-            <Text style={{ color: 'red' }}>{error}</Text>
+            <Text style={{ color: 'red', textAlign: 'center' }}>{error}</Text>
           </View>
         )}
 
-        {!loading && !error && posts.map((post) => (
-          <TouchableOpacity
-            key={post.id}
-            style={styles.postCard}
-            onPress={() => router.push(`/(tabs)/PostagemDetalhada?id=${post.id}`)}
-          >
-            <Text style={styles.postTitle}>{post.title}</Text>
-            <Text style={styles.postAuthor}>{post.author}</Text>
-            <Text style={styles.postContent}>{post.content.substring(0, 50)}</Text>
-          </TouchableOpacity>
-        ))}
+        {!loading &&
+          !error &&
+          posts.map((post) => (
+            <TouchableOpacity
+              key={post.id}
+              style={styles.postCard}
+              onPress={() => router.push(`/(tabs)/PostagemDetalhada?id=${post.id}`)}
+            >
+              <Text style={styles.postTitle}>{post.title}</Text>
+              <Text style={styles.postAuthor}>{post.author}</Text>
+              <Text style={styles.postContent}>
+                {post.content?.substring(0, 80) || ''}
+              </Text>
+            </TouchableOpacity>
+          ))}
+
+        {!loading && !error && posts.length === 0 && (
+          <View style={{ padding: 20 }}>
+            <Text style={{ textAlign: 'center', color: '#666' }}>Nenhuma postagem encontrada.</Text>
+          </View>
+        )}
       </ScrollView>
+
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
-  container: {
+  safeContainer: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  container2: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffffff',
-    paddingVertical: 10,
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    backgroundColor: '#fff',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#ffffff',
-    margin: 16,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   searchIcon: {
-    marginRight: 12,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: '#000',
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    margin: 16,
-    color: '#000000ff',
+    textAlign: 'center',
+    marginBottom: 4,
+    marginVertical: 16,
+    color: '#000',
   },
   postsContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 100, // espaço pro botão fixo
   },
   postCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 4,
   },
   postTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-    color: '#1a1a1a',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 6,
   },
   postAuthor: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontSize: 13,
     color: '#666',
+    marginBottom: 8,
   },
   postContent: {
     fontSize: 14,
-    color: '#666',
+    color: '#333',
+    textAlign: 'justify',
     lineHeight: 20,
   },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    backgroundColor: '#000000ff',
-    borderRadius: 8,
-    margin: 8,
+  footer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
   },
-  text: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 8,
+  button: {
+    backgroundColor: '#000',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

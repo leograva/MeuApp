@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { default as React, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -9,14 +9,39 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 export default function AdministrativoPosts() {
   const router = useRouter();
   const [posts, setPosts] = useState<any[]>([]);
   const isMountedRef = useRef(true);
+  const [query, setQuery] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+
+   const searchPosts = async (q?: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+        const url = q
+          ? `http://${host}:3000/posts/search?q=${encodeURIComponent(q)}`
+          : `http://${host}:3000/posts`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (isMountedRef.current) setPosts(json?.data?.posts || json?.posts || []);
+      } catch (err: any) {
+        if (isMountedRef.current) setError(err.message || 'Erro ao buscar posts');
+      } finally {
+        if (isMountedRef.current) setLoading(false);
+      }
+    };
+  
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -55,50 +80,59 @@ export default function AdministrativoPosts() {
       const res = await fetch(url, { method: 'DELETE' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setPosts((prev) => prev.filter((p) => p.id !== selectedPostId));
+      Alert.alert('Postagem excluída com sucesso!');
     } catch (err) {
       console.error(err);
     } finally {
       setShowModal(false);
       setSelectedPostId(null);
-      Alert.alert('Postagem excluída com sucesso!');
     }
   };
 
   const handleIr = (item: any) => {
-    // Passando o id via query string
     router.push(`/(tabs)/CriarEditarPostagem?id=${item.id}`);
   };
 
   return (
-
-    <View style={styles.container}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Buscar postagens"
-        placeholderTextColor="#999"
-      />
-
+    <SafeAreaView style={styles.safeContainer}>
       <Text style={styles.headerText}>Postagens - Administrativo</Text>
 
-      <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => (router.push('/(tabs)/CriarEditarPostagem') )}
-              >
-                <Text style={styles.buttonText}>Criar postagem</Text>
-              </TouchableOpacity>
+      {/* Barra de busca */}
+      <TextInput
+        placeholder="Buscar postagens por palavra-chave"
+          placeholderTextColor="#aaa"
+          style={styles.searchInput}
+          value={query}
+          onChangeText={(t) => setQuery(t)}
+          onBlur={() => searchPosts(query)}
+          onEndEditing={() => searchPosts(query)}
+          onSubmitEditing={() => searchPosts(query)}
+          returnKeyType="search"
+      />
 
+      {/* Botão de criar nova postagem */}
+      <TouchableOpacity
+        style={styles.createButton}
+        onPress={() => router.push('/(tabs)/CriarEditarPostagem')}
+      >
+        <Text style={styles.createButtonText}>Criar Postagem</Text>
+      </TouchableOpacity>
+
+      {/* Lista de postagens */}
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardContent}>{item.content}</Text>
+            <Text style={styles.cardContent}>
+              {item.content?.substring(0, 100) || 'Sem conteúdo'}
+            </Text>
 
             <View style={styles.cardButtons}>
               <TouchableOpacity
-                style={styles.editButton}
+                style={styles.primaryButton}
                 onPress={() => handleIr(item)}
               >
                 <Text style={styles.buttonText}>Editar</Text>
@@ -114,21 +148,14 @@ export default function AdministrativoPosts() {
                 <Text style={styles.buttonText}>Excluir</Text>
               </TouchableOpacity>
             </View>
-            
-            
-                
-
           </View>
-          
         )}
       />
 
-      <TouchableOpacity
-                style={styles.returnButton}
-                onPress={() => router.back()}
-              >
-                <Text style={styles.buttonText}>Voltar</Text>
-              </TouchableOpacity>
+      {/* Botão de voltar */}
+      <TouchableOpacity style={styles.returnButton} onPress={() => router.back()}>
+        <Text style={styles.buttonText}>Voltar</Text>
+      </TouchableOpacity>
 
       {/* Modal de confirmação */}
       <Modal
@@ -139,12 +166,12 @@ export default function AdministrativoPosts() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text>
+            <Text style={styles.modalTitle}>
               Tem certeza que deseja excluir esta postagem?
             </Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.editButton, { flex: 1, marginRight: 10 }]}
+                style={[styles.primaryButton, { flex: 1, marginRight: 8 }]}
                 onPress={() => setShowModal(false)}
               >
                 <Text style={styles.buttonText}>Cancelar</Text>
@@ -159,91 +186,106 @@ export default function AdministrativoPosts() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
-// ...styles iguais ao seu código original
-
 const styles = StyleSheet.create({
-  container: {
+  safeContainer: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 40,
+    backgroundColor: '#f8f9fa',
     paddingHorizontal: 16,
   },
-  searchInput: {
-    height: 40,
-    backgroundColor: '#F2F2F2',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+  headerText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center',
+    marginTop: 20,
     marginBottom: 16,
   },
-  headerText: {
+  searchInput: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     fontSize: 16,
-    fontWeight: 'bold',
+    color: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
     marginBottom: 16,
+  },
+  createButton: {
+    backgroundColor: '#000',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  createButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
   card: {
-    backgroundColor: '#F2F2F2',
+    backgroundColor: '#fff',
+    borderRadius: 12,
     padding: 16,
-    borderRadius: 8,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 3,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
+    color: '#000',
     marginBottom: 8,
     textAlign: 'center',
   },
   cardContent: {
     fontSize: 14,
-    marginBottom: 16,
-    textAlign: 'center',
+    color: '#555',
+    lineHeight: 20,
+    textAlign: 'justify',
+    marginBottom: 12,
   },
   cardButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-   returnButton: {
-    backgroundColor: '#000007ff',
-    marginTop: 10,
-    paddingHorizontal: 20,
-    borderRadius: 6,
-  },
-  editButton: {
-    backgroundColor: '#000000ff',
+  primaryButton: {
+    backgroundColor: '#000',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 6,
+    borderRadius: 8,
   },
   deleteButton: {
-    backgroundColor: '#6C0000',
+    backgroundColor: '#d32f2f',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 6,
+    borderRadius: 8,
+  },
+  returnButton: {
+    backgroundColor: '#000',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 16,
   },
   buttonText: {
-    color: '#FFF',
+    color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -251,7 +293,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 24,
     borderRadius: 10,
-    width: '80%',
+    width: '85%',
     elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 16,
+    color: '#000',
+    fontWeight: '500',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
