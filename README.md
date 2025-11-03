@@ -1,50 +1,140 @@
-# Welcome to your Expo app 👋
+# Sistema de Gerenciamento de Posts Administrativos
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Descrição do Projeto
 
-## Get started
+Este projeto acadêmico implementa um sistema mobile multiplataforma para gerenciamento de postagens administrativas, demonstrando a aplicação prática de conceitos avançados de desenvolvimento mobile usando React Native e Expo.
 
-1. Install dependencies
+### Objetivo Acadêmico
 
-   ```bash
-   npm install
-   ```
+O projeto visa demonstrar proficiência em:
+- Arquitetura de aplicações móveis modernas
+- Implementação de sistemas de autenticação
+- Gerenciamento de estado global
+- Roteamento dinâmico em aplicações React Native
+- Desenvolvimento multiplataforma (Android/iOS/Web)
 
-2. Start the app
+## Arquitetura e Tecnologias
 
-   ```bash
-   npx expo start
-   ```
+### Stack Tecnológico Principal
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```mermaid
+graph TD
+    A[Frontend Mobile] --> B[React Native 0.81.5]
+    B --> C[Expo SDK 54]
+    C --> D[TypeScript]
+    B --> E[expo-router]
+    E --> F[File-based Routing]
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+#### Framework e Runtime
+- **Expo SDK ~54.0.20**: Framework para desenvolvimento React Native
+- **React Native 0.81.5**: Core do desenvolvimento mobile
+- **TypeScript 5.9.2**: Tipagem estática e features modernas de ES
 
-## Learn more
+#### Gerenciamento de Estado e Autenticação
+- **Context API**: Implementado via `AuthContext` para gerenciamento global de autenticação
+- **expo-router ~6.0.13**: Sistema de roteamento baseado em arquivos
+- **@react-navigation**: Stack e Tab navigation integrados
 
-To learn more about developing your project with Expo, look at the following resources:
+#### UI/UX Components
+- **@expo/vector-icons**: Biblioteca de ícones vetoriais
+- **react-native-reanimated**: Animações performáticas
+- **react-native-gesture-handler**: Gestos nativos
+- **react-native-safe-area-context**: Adaptação a diferentes tamanhos de tela
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Estrutura do Projeto
 
-## Join the community
+```
+src/
+├── app/                    # Rotas e telas da aplicação
+│   ├── _layout.tsx        # Layout principal e navegação
+│   ├── (tabs)/            # Grupo de rotas com tabs
+│   │   ├── _layout.tsx    # Configuração das tabs
+│   │   ├── index.tsx      # Tela inicial
+│   │   └── ...           # Outras telas
+├── components/            # Componentes reutilizáveis
+│   ├── themed/           # Componentes com suporte a tema
+│   └── ui/               # Componentes de interface
+├── hooks/                # Hooks customizados
+├── context/              # Contextos globais
+└── constants/            # Constantes e temas
+```
 
-Join our community of developers creating universal apps.
+## Funcionalidades Implementadas
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### 1. Sistema de Navegação
+- Navegação em tabs com bottom bar customizada
+- Roteamento dinâmico baseado em arquivos
+- Deep linking suportado nativamente
+
+### 2. Autenticação
+- Fluxo completo de autenticação via Context
+- Proteção de rotas administrativas
+- Persistência de sessão
+
+### 3. Gestão de Posts
+- CRUD completo de postagens, professores e estudantes
+- Interface administrativa dedicada
+
+### 4. Interface Responsiva
+- Suporte a temas claro/escuro
+- Adaptação automática a diferentes dispositivos
+- Componentes estilizados reutilizáveis
+
+## Patterns e Boas Práticas
+
+### Padrões de Projeto Utilizados
+1. **Provider Pattern**
+   - Implementado via Context API
+   - Gerenciamento global de estado
+
+2. **Component Composition**
+   - Componentes modulares e reutilizáveis
+   - Themed components para consistência visual
+
+3. **Custom Hooks**
+   - Abstração de lógica comum
+   - Hooks específicos para tema e autenticação
+
+### Clean Code
+- Nomenclatura clara e consistente
+- Separação de responsabilidades
+- Componentização efetiva
+
+## Setup do Ambiente de Desenvolvimento
+
+```powershell
+# Instalação de dependências
+npm install
+
+# Iniciar em modo desenvolvimento
+npm start
+
+# Executar em plataformas específicas
+npm run android  # Android
+npm run ios      # iOS
+npm run web      # Versão Web
+```
+
+### Requisitos do Sistema
+- Node.js 18+
+- npm 9+
+- Expo CLI
+- Android Studio (para emulador Android)
+- Xcode (para emulador iOS - apenas macOS)
+
+## Testes e Qualidade
+
+### Ferramentas de Qualidade
+- **ESLint**: Configurado com regras estritas
+- **TypeScript**: Checagem estática de tipos
+- **Expo Doctor**: Verificação de configuração
+
+## Conclusão e Aprendizados
+
+Este projeto demonstra a implementação prática de conceitos modernos de desenvolvimento mobile, incluindo:
+- Arquitetura escalável e manutenível
+- Padrões de projeto React/React Native
+- TypeScript em ambiente mobile
+- Gestão de estado e autenticação
+- Roteamento avançado com expo-router
