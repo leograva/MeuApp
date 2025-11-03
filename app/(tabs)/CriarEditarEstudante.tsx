@@ -97,12 +97,20 @@ const fetchStudent = async () => {
       />
 
       <Text style={styles.label}>E-mail</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Digite aqui o e-mail"
-        value={email}
-        onChangeText={setEmail}
-      />
+            <TextInput
+              style={[
+                styles.input, 
+                {borderColor: email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? 'red' : '#ccc'}
+              ]}
+              placeholder="Digite aqui o e-mail"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            {email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
+              <Text style={{ color: 'red', marginBottom: 10 }}>Email inválido</Text>
+            )}
       
        {editar ? (
         <TouchableOpacity style={styles.botao} onPress={handleAtualizar}>
