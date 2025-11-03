@@ -18,14 +18,10 @@ export default function AdministrativoPosts() {
   const [posts, setPosts] = useState<any[]>([]);
   const isMountedRef = useRef(true);
   const [query, setQuery] = useState<string>('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
    const searchPosts = async (q?: string) => {
-      setLoading(true);
-      setError(null);
       try {
         const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
         const url = q
@@ -36,9 +32,7 @@ export default function AdministrativoPosts() {
         const json = await res.json();
         if (isMountedRef.current) setPosts(json?.data?.posts || json?.posts || []);
       } catch (err: any) {
-        if (isMountedRef.current) setError(err.message || 'Erro ao buscar posts');
-      } finally {
-        if (isMountedRef.current) setLoading(false);
+        console.error(err);
       }
     };
   
