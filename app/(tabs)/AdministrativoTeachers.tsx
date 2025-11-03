@@ -18,11 +18,15 @@ export default function AdministrativoTeachers() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const isMountedRef = useRef(true);
   const [query, setQuery] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
 
 
    const searchTeachers = async (q?: string) => {
+          setLoading(true);
+          setError(null);
           try {
             const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
             const url = q
@@ -33,7 +37,9 @@ export default function AdministrativoTeachers() {
             const json = await res.json();
             if (isMountedRef.current) setTeachers(json?.data?.teachers || json?.teachers || []);
           } catch (err: any) {
-            console.error(err);
+            if (isMountedRef.current) setError(err.message || 'Erro ao buscar professores');
+          } finally {
+            if (isMountedRef.current) setLoading(false);
           }
         };
 

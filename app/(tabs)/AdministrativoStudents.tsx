@@ -18,10 +18,14 @@ export default function AdministrativoStudents() {
   const [students, setStudents] = useState<any[]>([]);
   const isMountedRef = useRef(true);
   const [query, setQuery] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
    const searchStudents = async (q?: string) => {
+        setLoading(true);
+        setError(null);
         try {
           const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
           const url = q
@@ -32,7 +36,9 @@ export default function AdministrativoStudents() {
           const json = await res.json();
           if (isMountedRef.current) setStudents(json?.data?.students || json?.students || []);
         } catch (err: any) {
-          console.error(err);
+          if (isMountedRef.current) setError(err.message || 'Erro ao buscar estudantes');
+        } finally {
+          if (isMountedRef.current) setLoading(false);
         }
       };
 
